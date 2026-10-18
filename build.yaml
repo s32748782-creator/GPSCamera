@@ -1,0 +1,46 @@
+name: Build IPA
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安裝 XcodeGen
+        run: brew install xcodegen
+
+      - name: 產生 Xcode 專案
+        run: xcodegen generate
+
+      - name: 編譯
+        run: |
+          xcodebuild -project GPSCamera.xcodeproj -target GPSCamera \
+            -configuration Release -sdk iphoneos \
+            SYMROOT="$PWD/build" \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            build
+
+      - name: 打包成 IPA
+        run: |
+          mkdir -p Payload
+          cp -R build/Release-iphoneos/GPSCamera.app Payload/
+          zip -qry GPSCamera.ipa Payload
+
+      - name: 發佈到 Releases（手機直接下載）
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest --yes --cleanup-tag || true
+          gh release create latest GPSCamera.ipa --title "定位相機 最新版" --notes "自動編譯，下載 GPSCamera.ipa 後用易能簽簽名安裝"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GPSCamera-ipa
+          path: GPSCamera.ipa

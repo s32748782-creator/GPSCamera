@@ -7,7 +7,7 @@ targets:
   GPSCamera:
     type: application
     platform: iOS
-    sources: [Sources]
+    sources: [GPSCameraApp.swift]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.gpscamera.app
